@@ -1,43 +1,93 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect, Suspense } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function ConfirmEmailPage() {
-  const [message, setMessage] = useState('Verifying your email...')
+function ConfirmEmailContent() {
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    const type = searchParams.get('type')
+    const confirmEmail = async () => {
+      try {
+        const token = searchParams.get('token')
+        const type = searchParams.get('type')
 
-    if (token && type === 'email') {
-      supabase.auth.verifyOtp({ token_hash: token, type: 'email' })
-        .then(({ error }) => {
+        if (!token || !type) {
+          setMessage('Invalid confirmation link')
+          setLoading(false)
+          return
+        }
+
+        if (type === 'signup') {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'signup'
+          })
+
           if (error) {
-            setMessage('Error verifying email. Please try again.')
+            setMessage('Error: ' + error.message)
           } else {
-            setMessage('Email verified successfully! You can now close this window.')
+            setMessage('Email confirmed successfully! You can now log in.')
+            setTimeout(() => {
+              router.push('/login')
+            }, 2000)
           }
-        })
-    } else {
-      setMessage('Invalid verification link')
+        } else if (type === 'recovery') {
+          setMessage('Password reset link is valid. You can now reset your password.')
+          setTimeout(() => {
+            router.push('/reset-password')
+          }, 2000)
+        }
+      } catch {
+        setMessage('An unexpected error occurred. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [searchParams])
+
+    confirmEmail()
+  }, [searchParams, router, supabase.auth])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Email Verification
+            Email Confirmation
           </h2>
-        </div>
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">{message}</p>
+          {loading ? (
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Verifying your email...
+            </p>
+          ) : (
+            <p className={`mt-2 text-center text-sm ${message.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+              {message}
+            </p>
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ConfirmEmail() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ConfirmEmailContent />
+    </Suspense>
   )
 } 
