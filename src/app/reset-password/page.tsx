@@ -19,11 +19,11 @@ export default function ResetPassword() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/login')
+        setMessage('Invalid or expired reset link. Please request a new password reset.')
       }
     }
     checkSession()
-  }, [router, supabase.auth])
+  }, [supabase.auth])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
