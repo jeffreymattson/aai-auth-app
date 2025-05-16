@@ -2,14 +2,12 @@
 
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -30,7 +28,7 @@ export default function ForgotPassword() {
       } else {
         setMessage('Password reset instructions have been sent to your email.')
       }
-    } catch (err) {
+    } catch {
       setMessage('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)

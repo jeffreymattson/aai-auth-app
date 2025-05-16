@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
@@ -47,7 +46,7 @@ export default function ResetPassword() {
       } else {
         setMessage('Password has been reset successfully.')
       }
-    } catch (err) {
+    } catch {
       setMessage('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
