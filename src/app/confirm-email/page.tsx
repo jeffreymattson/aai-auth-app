@@ -29,19 +29,26 @@ function ConfirmEmailContent() {
         console.log('Starting email confirmation process...')
         console.log('Current URL:', window.location.href)
 
-        let token = searchParams.get('token')
-        let type = searchParams.get('type')
-        console.log('Initial query params:', { token, type })
+        // First check hash fragment for access_token
+        let token = null
+        let type = null
 
-        // If not in query params, try to get from hash fragment
-        if ((!token || !type) && window.location.hash) {
-          console.log('No token/type in query params, checking hash fragment...')
+        if (window.location.hash) {
+          console.log('Checking hash fragment...')
           const hash = window.location.hash.substring(1)
           console.log('Hash fragment:', hash)
           const hashParams = new URLSearchParams(hash)
           token = hashParams.get('access_token')
           type = hashParams.get('type')
           console.log('Hash params:', { token, type })
+        }
+
+        // If not in hash, check query params
+        if (!token || !type) {
+          console.log('Checking query params...')
+          token = searchParams.get('token')
+          type = searchParams.get('type')
+          console.log('Query params:', { token, type })
         }
 
         if (!token || !type) {
