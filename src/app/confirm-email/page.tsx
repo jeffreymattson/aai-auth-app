@@ -46,35 +46,48 @@ export default function ConfirmEmail() {
     if (hash) {
       try {
         const hashParams = new URLSearchParams(hash.substring(1))
-        const token = hashParams.get('access_token')
+        const accessToken = hashParams.get('access_token')
         const type = hashParams.get('type')
 
-        if (token && type) {
+        if (accessToken && type) {
           const verifyEmail = async () => {
             try {
               if (type === 'signup') {
                 // Log the request details
-                console.log('Attempting to verify OTP with:', {
+                console.log('Attempting to verify email with:', {
                   type: 'signup',
-                  tokenLength: token.length
+                  tokenLength: accessToken.length
                 })
 
-                const { error } = await supabase.auth.verifyOtp({
-                  token_hash: token,
-                  type: 'signup'
+                // Set the session with the access token
+                const { error: sessionError } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: hashParams.get('refresh_token') || ''
                 })
 
-                if (error) {
+                if (sessionError) {
                   setIsError(true)
-                  console.error('Supabase auth error:', error)
-                  if (error.message.includes('expired')) {
-                    setMessage(`This email confirmation link has expired. Please request a new confirmation email.\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
-                  } else {
-                    setMessage(`Error: ${error.message}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
-                  }
-                } else {
+                  console.error('Supabase session error:', sessionError)
+                  setMessage(`Error setting session: ${sessionError.message}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+                  return
+                }
+
+                // Get the user to verify the email is confirmed
+                const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+                if (userError) {
+                  setIsError(true)
+                  console.error('Supabase user error:', userError)
+                  setMessage(`Error getting user: ${userError.message}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+                  return
+                }
+
+                if (user?.email_confirmed_at) {
                   setIsError(false)
                   setMessage('Email confirmed successfully! You can now log in.')
+                } else {
+                  setIsError(true)
+                  setMessage('Email confirmation failed. Please try requesting a new confirmation email.\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}')
                 }
               } else if (type === 'recovery') {
                 setIsError(false)
@@ -93,7 +106,7 @@ export default function ConfirmEmail() {
           verifyEmail()
         } else {
           setIsError(true)
-          setMessage(`No token or type found in hash. Token: ${!!token}, Type: ${type}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+          setMessage(`No token or type found in hash. Token: ${!!accessToken}, Type: ${type}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
         }
       } catch (err) {
         setIsError(true)
