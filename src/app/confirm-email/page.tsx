@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 function ConfirmEmailContent() {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [debug, setDebug] = useState<any>({})
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createBrowserClient(
@@ -15,22 +16,26 @@ function ConfirmEmailContent() {
   )
 
   useEffect(() => {
-    console.log('Component mounted')
+    const debugInfo: any = {
+      url: typeof window !== 'undefined' ? window.location.href : 'no window',
+      hash: typeof window !== 'undefined' ? window.location.hash : 'no window',
+      searchParams: Object.fromEntries(searchParams.entries())
+    }
+
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      debugInfo.hashParams = Object.fromEntries(hashParams.entries())
+    }
+
+    setDebug(debugInfo)
     
-    // Immediate check for hash
     if (typeof window !== 'undefined') {
-      console.log('Window is defined')
-      console.log('Current URL:', window.location.href)
-      
       const hash = window.location.hash
-      console.log('Raw hash:', hash)
       
       if (hash) {
         const hashParams = new URLSearchParams(hash.substring(1))
         const token = hashParams.get('access_token')
         const type = hashParams.get('type')
-        
-        console.log('Found in hash:', { token, type })
         
         if (token && type) {
           const verifyEmail = async () => {
@@ -42,10 +47,8 @@ function ConfirmEmailContent() {
                 })
 
                 if (error) {
-                  console.log('Verification error:', error)
                   setMessage('Error: ' + error.message)
                 } else {
-                  console.log('Verification successful')
                   setMessage('Email confirmed successfully! You can now log in.')
                 }
               } else if (type === 'recovery') {
@@ -54,7 +57,6 @@ function ConfirmEmailContent() {
                 setMessage('Invalid confirmation type')
               }
             } catch (error) {
-              console.error('Unexpected error:', error)
               setMessage('An unexpected error occurred. Please try again.')
             } finally {
               setLoading(false)
@@ -67,11 +69,9 @@ function ConfirmEmailContent() {
       }
     }
     
-    // If we get here, no valid token was found
-    console.log('No valid token found')
     setMessage('Invalid confirmation link')
     setLoading(false)
-  }, [])
+  }, [searchParams])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -89,6 +89,14 @@ function ConfirmEmailContent() {
               {message}
             </p>
           )}
+        </div>
+        
+        {/* Debug Information */}
+        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-900 mb-2">Debug Information:</h3>
+          <pre className="text-xs text-gray-600 whitespace-pre-wrap">
+            {JSON.stringify(debug, null, 2)}
+          </pre>
         </div>
       </div>
     </div>
