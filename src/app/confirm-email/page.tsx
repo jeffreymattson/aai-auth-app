@@ -6,42 +6,31 @@ import { createBrowserClient } from '@supabase/ssr'
 export default function ConfirmEmail() {
   const [message, setMessage] = useState('Loading...')
   const [isError, setIsError] = useState(false)
+  const [configError, setConfigError] = useState<string | null>(null)
   
   // Verify environment variables are available
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Configuration Error
-            </h2>
-            <div className="mt-4 p-4 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
-              <p className="font-medium mb-2">Error</p>
-              <pre className="whitespace-pre-wrap">
-                {`Missing environment variables:
-                NEXT_PUBLIC_SUPABASE_URL: ${!!supabaseUrl}
-                NEXT_PUBLIC_SUPABASE_ANON_KEY: ${!!supabaseAnonKey}`}
-              </pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+  const supabase = createBrowserClient(
+    supabaseUrl || '',
+    supabaseAnonKey || ''
+  )
 
   useEffect(() => {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setConfigError(`Missing environment variables:
+        NEXT_PUBLIC_SUPABASE_URL: ${!!supabaseUrl}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${!!supabaseAnonKey}`)
+      return
+    }
+
     // Basic debug info
     const url = window.location.href
     const hash = window.location.hash
     const searchParams = new URLSearchParams(window.location.search)
     
-    let debugInfo = {
+    const debugInfo = {
       url,
       hash,
       searchParams: Object.fromEntries(searchParams.entries()),
@@ -116,6 +105,26 @@ export default function ConfirmEmail() {
       setMessage(`No hash found in URL\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
     }
   }, [supabase.auth, supabaseUrl, supabaseAnonKey])
+
+  if (configError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Configuration Error
+            </h2>
+            <div className="mt-4 p-4 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
+              <p className="font-medium mb-2">Error</p>
+              <pre className="whitespace-pre-wrap">
+                {configError}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
