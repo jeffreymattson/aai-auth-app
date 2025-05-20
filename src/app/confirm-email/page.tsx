@@ -41,8 +41,8 @@ export default function ConfirmEmail() {
               } else {
                 setMessage(`Invalid type: ${type}`)
               }
-            } catch (error) {
-              setMessage('An unexpected error occurred. Please try again.')
+            } catch (err) {
+              setMessage(`An unexpected error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`)
             }
           }
           
@@ -50,13 +50,13 @@ export default function ConfirmEmail() {
         } else {
           setMessage(`No token or type found in hash. Token: ${!!token}, Type: ${type}`)
         }
-      } catch (error) {
-        setMessage(`Error parsing hash: ${error}`)
+      } catch (err) {
+        setMessage(`Error parsing hash: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     } else {
       setMessage('No hash found in URL')
     }
-  }, [])
+  }, [supabase.auth])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
