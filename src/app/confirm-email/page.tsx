@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 function ConfirmEmailContent() {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
-  const [isClient, setIsClient] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createBrowserClient(
@@ -15,34 +15,32 @@ function ConfirmEmailContent() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // Ensure hydration
   useEffect(() => {
-    setIsClient(true)
+    setHydrated(true)
   }, [])
 
   useEffect(() => {
-    if (!isClient) return
+    if (!hydrated) return
 
-    const confirmEmail = async () => {
+    // Wait for the hash to be available
+    const run = async () => {
       try {
         console.log('Starting email confirmation process...')
         console.log('Current URL:', window.location.href)
-        
-        // Get token and type from either query params or hash fragment
+
         let token = searchParams.get('token')
         let type = searchParams.get('type')
-        
         console.log('Initial query params:', { token, type })
 
         // If not in query params, try to get from hash fragment
-        if (!token || !type) {
+        if ((!token || !type) && window.location.hash) {
           console.log('No token/type in query params, checking hash fragment...')
           const hash = window.location.hash.substring(1)
           console.log('Hash fragment:', hash)
-          
           const hashParams = new URLSearchParams(hash)
           token = hashParams.get('access_token')
           type = hashParams.get('type')
-          
           console.log('Hash params:', { token, type })
         }
 
@@ -90,8 +88,8 @@ function ConfirmEmailContent() {
       }
     }
 
-    confirmEmail()
-  }, [isClient, searchParams, router, supabase.auth])
+    setTimeout(run, 0)
+  }, [hydrated, searchParams, router, supabase.auth])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
