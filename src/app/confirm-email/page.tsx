@@ -17,45 +17,66 @@ function ConfirmEmailContent() {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
+        console.log('Starting email confirmation process...')
+        console.log('Current URL:', window.location.href)
+        
         // Get token and type from either query params or hash fragment
         let token = searchParams.get('token')
         let type = searchParams.get('type')
+        
+        console.log('Initial query params:', { token, type })
 
         // If not in query params, try to get from hash fragment
         if (!token || !type) {
+          console.log('No token/type in query params, checking hash fragment...')
           const hash = window.location.hash.substring(1)
+          console.log('Hash fragment:', hash)
+          
           const hashParams = new URLSearchParams(hash)
           token = hashParams.get('access_token')
           type = hashParams.get('type')
+          
+          console.log('Hash params:', { token, type })
         }
 
         if (!token || !type) {
+          console.log('No valid token or type found')
           setMessage('Invalid confirmation link')
           setLoading(false)
           return
         }
 
+        console.log('Proceeding with token and type:', { token, type })
+
         if (type === 'signup') {
+          console.log('Processing signup confirmation...')
           const { error } = await supabase.auth.verifyOtp({
             token_hash: token,
             type: 'signup'
           })
 
           if (error) {
+            console.log('Error during verification:', error)
             setMessage('Error: ' + error.message)
           } else {
+            console.log('Email verification successful')
             setMessage('Email confirmed successfully! You can now log in.')
             setTimeout(() => {
               router.push('/login')
             }, 2000)
           }
         } else if (type === 'recovery') {
+          console.log('Processing recovery confirmation...')
           setMessage('Password reset link is valid. You can now reset your password.')
           setTimeout(() => {
             router.push('/reset-password')
           }, 2000)
+        } else {
+          console.log('Unknown type:', type)
+          setMessage('Invalid confirmation type')
         }
-      } catch {
+      } catch (error) {
+        console.error('Unexpected error:', error)
         setMessage('An unexpected error occurred. Please try again.')
       } finally {
         setLoading(false)
