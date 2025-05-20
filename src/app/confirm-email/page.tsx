@@ -17,8 +17,17 @@ function ConfirmEmailContent() {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
-        const token = searchParams.get('token')
-        const type = searchParams.get('type')
+        // Get token and type from either query params or hash fragment
+        let token = searchParams.get('token')
+        let type = searchParams.get('type')
+
+        // If not in query params, try to get from hash fragment
+        if (!token || !type) {
+          const hash = window.location.hash.substring(1)
+          const hashParams = new URLSearchParams(hash)
+          token = hashParams.get('access_token')
+          type = hashParams.get('type')
+        }
 
         if (!token || !type) {
           setMessage('Invalid confirmation link')
