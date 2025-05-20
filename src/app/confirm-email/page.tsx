@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 function ConfirmEmailContent() {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createBrowserClient(
@@ -15,6 +16,12 @@ function ConfirmEmailContent() {
   )
 
   useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isClient) return
+
     const confirmEmail = async () => {
       try {
         console.log('Starting email confirmation process...')
@@ -84,7 +91,7 @@ function ConfirmEmailContent() {
     }
 
     confirmEmail()
-  }, [searchParams, router, supabase.auth])
+  }, [isClient, searchParams, router, supabase.auth])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
