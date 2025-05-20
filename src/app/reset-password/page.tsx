@@ -6,10 +6,11 @@ import { createBrowserClient } from '@supabase/ssr'
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [message, setMessage] = useState('Loading...')
+  const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
   const [loading, setLoading] = useState(false)
   const [configError, setConfigError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
   
   // Verify environment variables are available
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -33,7 +34,7 @@ export default function ResetPassword() {
     const hash = window.location.hash
     const searchParams = new URLSearchParams(window.location.search)
     
-    const debugInfo = {
+    const info = {
       url,
       hash,
       searchParams: Object.fromEntries(searchParams.entries()),
@@ -44,7 +45,7 @@ export default function ResetPassword() {
       }
     }
     
-    setMessage(`Debug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+    setDebugInfo(info)
 
     if (hash) {
       try {
@@ -64,7 +65,7 @@ export default function ResetPassword() {
               if (sessionError) {
                 setIsError(true)
                 console.error('Supabase session error:', sessionError)
-                setMessage(`Error setting session: ${sessionError.message}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+                setMessage(`Error setting session: ${sessionError.message}`)
                 return
               }
 
@@ -74,7 +75,7 @@ export default function ResetPassword() {
               if (userError) {
                 setIsError(true)
                 console.error('Supabase user error:', userError)
-                setMessage(`Error getting user: ${userError.message}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+                setMessage(`Error getting user: ${userError.message}`)
                 return
               }
 
@@ -83,28 +84,28 @@ export default function ResetPassword() {
                 setMessage('')
               } else {
                 setIsError(true)
-                setMessage('Invalid or expired reset link. Please request a new password reset.\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}')
+                setMessage('Invalid or expired reset link. Please request a new password reset.')
               }
             } catch (err) {
               setIsError(true)
               console.error('Unexpected error during verification:', err)
-              setMessage(`An unexpected error occurred: ${err instanceof Error ? err.message : 'Unknown error'}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+              setMessage(`An unexpected error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`)
             }
           }
           
           verifyResetLink()
         } else {
           setIsError(true)
-          setMessage(`Invalid reset link. Please request a new password reset.\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+          setMessage('Invalid reset link. Please request a new password reset.')
         }
       } catch (err) {
         setIsError(true)
         console.error('Error parsing hash:', err)
-        setMessage(`Error parsing hash: ${err instanceof Error ? err.message : 'Unknown error'}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+        setMessage(`Error parsing hash: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     } else {
       setIsError(true)
-      setMessage(`No hash found in URL\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+      setMessage('No hash found in URL')
     }
   }, [supabase.auth, supabaseUrl, supabaseAnonKey])
 
@@ -209,6 +210,14 @@ export default function ResetPassword() {
           {message && (
             <div className={`text-sm ${isError ? 'text-red-600' : 'text-green-600'}`}>
               {message}
+              {isError && debugInfo && (
+                <div className="mt-4 p-4 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
+                  <p className="font-medium mb-2">Debug Information:</p>
+                  <pre className="whitespace-pre-wrap">
+                    {JSON.stringify(debugInfo, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           )}
 

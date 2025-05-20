@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
 export default function ConfirmEmail() {
-  const [message, setMessage] = useState('Loading...')
+  const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
   const [configError, setConfigError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
   
   // Verify environment variables are available
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -30,7 +31,7 @@ export default function ConfirmEmail() {
     const hash = window.location.hash
     const searchParams = new URLSearchParams(window.location.search)
     
-    const debugInfo = {
+    const info = {
       url,
       hash,
       searchParams: Object.fromEntries(searchParams.entries()),
@@ -41,7 +42,7 @@ export default function ConfirmEmail() {
       }
     }
     
-    setMessage(`Debug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+    setDebugInfo(info)
 
     if (hash) {
       try {
@@ -68,7 +69,7 @@ export default function ConfirmEmail() {
                 if (sessionError) {
                   setIsError(true)
                   console.error('Supabase session error:', sessionError)
-                  setMessage(`Error setting session: ${sessionError.message}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+                  setMessage(`Error setting session: ${sessionError.message}`)
                   return
                 }
 
@@ -78,7 +79,7 @@ export default function ConfirmEmail() {
                 if (userError) {
                   setIsError(true)
                   console.error('Supabase user error:', userError)
-                  setMessage(`Error getting user: ${userError.message}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+                  setMessage(`Error getting user: ${userError.message}`)
                   return
                 }
 
@@ -87,35 +88,35 @@ export default function ConfirmEmail() {
                   setMessage('Email confirmed successfully! You can now log in.')
                 } else {
                   setIsError(true)
-                  setMessage('Email confirmation failed. Please try requesting a new confirmation email.\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}')
+                  setMessage('Email confirmation failed. Please try requesting a new confirmation email.')
                 }
               } else if (type === 'recovery') {
                 setIsError(false)
                 setMessage('Password reset link is valid. You can now reset your password.')
               } else {
                 setIsError(true)
-                setMessage(`Invalid type: ${type}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+                setMessage(`Invalid type: ${type}`)
               }
             } catch (err) {
               setIsError(true)
               console.error('Unexpected error during verification:', err)
-              setMessage(`An unexpected error occurred: ${err instanceof Error ? err.message : 'Unknown error'}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+              setMessage(`An unexpected error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`)
             }
           }
           
           verifyEmail()
         } else {
           setIsError(true)
-          setMessage(`No token or type found in hash. Token: ${!!accessToken}, Type: ${type}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+          setMessage(`No token or type found in hash. Token: ${!!accessToken}, Type: ${type}`)
         }
       } catch (err) {
         setIsError(true)
         console.error('Error parsing hash:', err)
-        setMessage(`Error parsing hash: ${err instanceof Error ? err.message : 'Unknown error'}\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+        setMessage(`Error parsing hash: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     } else {
       setIsError(true)
-      setMessage(`No hash found in URL\n\nDebug Info:\n${JSON.stringify(debugInfo, null, 2)}`)
+      setMessage('No hash found in URL')
     }
   }, [supabase.auth, supabaseUrl, supabaseAnonKey])
 
@@ -154,9 +155,17 @@ export default function ConfirmEmail() {
             <p className="font-medium mb-2">
               {isError ? 'Error' : 'Success'}
             </p>
-            <pre className="whitespace-pre-wrap">
+            <div>
               {message}
-            </pre>
+              {isError && debugInfo && (
+                <div className="mt-4 p-4 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
+                  <p className="font-medium mb-2">Debug Information:</p>
+                  <pre className="whitespace-pre-wrap">
+                    {JSON.stringify(debugInfo, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
