@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
+interface DebugInfo {
+  url: string
+  hash: string
+  searchParams: Record<string, string>
+  hashParams: Record<string, string> | null
+  supabaseConfig: {
+    url: string
+    hasAnonKey: boolean
+  }
+}
+
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -10,7 +21,7 @@ export default function ResetPassword() {
   const [isError, setIsError] = useState(false)
   const [loading, setLoading] = useState(false)
   const [configError, setConfigError] = useState<string | null>(null)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null)
   
   // Verify environment variables are available
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
